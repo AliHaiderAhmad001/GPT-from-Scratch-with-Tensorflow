@@ -1,3 +1,38 @@
+import tensorflow as tf
+
+def masked_accuracy(label, pred):
+    """
+    Computes the masked accuracy between the predicted and target labels.
+
+    Args:
+        label: Target label tensor.
+        pred: Predicted label tensor.
+
+    Returns:
+        Masked accuracy value.
+    """
+    # Get the predicted labels by taking the argmax along the last dimension
+    pred_labels = tf.argmax(pred, axis=2)
+
+    # Convert the target labels to the same data type as the predicted labels
+    label = tf.cast(label, pred_labels.dtype)
+
+    # Compute a binary tensor for matching predicted and target labels
+    match = label == pred_labels
+
+    # Create a mask to ignore padded tokens
+    mask = label != 0
+
+    # Apply the mask to the matching tensor
+    match = match & mask
+
+    # Convert the binary tensor to floating-point values
+    match = tf.cast(match, dtype=tf.float32)
+    mask = tf.cast(mask, dtype=tf.float32)
+
+    # Compute the accuracy over non-padded tokens
+    return tf.reduce_sum(match) / tf.reduce_sum(mask)
+
 def perplexity(label, pred):
     """
     Computes the perplexity metric based on the Categorical Cross Entropy (CCE) loss.
