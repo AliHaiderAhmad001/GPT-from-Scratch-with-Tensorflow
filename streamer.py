@@ -59,12 +59,9 @@ class DataStreamer(metaclass=ABCMeta):
         """
 
     @abstractmethod
-    def get_filenames(self, data_dir):
+    def get_filenames(self):
         """
         Retrieves a list of file paths from subdirectories within the given root directory.
-
-        Args:
-            data_dir (str): The root directory containing subdirectories.
 
         Returns:
             list: List of file paths.
@@ -78,51 +75,65 @@ class DataStreamer(metaclass=ABCMeta):
 
 class EnglishDataStreamer(DataStreamer):
     """
-    An implementation of the DataStreamer for English data.
+    A specialized implementation of DataStreamer for handling English language data.
+
+    This class extends the functionality of the DataStreamer class to specifically
+    handle English language data. It provides methods for loading and processing
+    English text data for further use in natural language processing tasks.
 
     Args:
-        data_dir (str): The root directory containing subdirectories with data files.
-        tokenizer_path (str): Path to the tokenizer model or name of a pre-trained tokenizer.
-        max_length (int): Maximum sequence length for tokenization.
-        buffer_size (int, optional): The size of the internal buffer for loading data. Default is 1024.
-        batch_size (int, optional): The number of tokenized sequences in each batch. Default is 64.
-        shuffle (bool, optional): Whether to shuffle the data within the buffer. Default is True.
-        lower_case (bool, optional): Whether to convert text to lowercase. Default is False.
-        seed (int, optional): Seed for random operations. Default is 0.
+        config (object): Configuration object containing relevant parameters.
+
+    Attributes:
+        buffer_idx (int): Index pointing to the current position in the buffer.
+        buffer (list): List to hold fetched data for efficient batching.
+        ptr (int): Pointer for data processing within the buffer.
+        flag (bool): Flag indicating the status of data fetching.
+        fetching_thread: Thread for fetching data asynchronously.
+        dataset_type (str): Either "train" or "valid".
+        buffer_size (int): Size of the buffer for holding fetched data.
+        batch_size (int): Size of each batch of data to be processed.
+        tokenizer_path (str): Path to the tokenizer used for text processing.
+        max_length (int): Maximum length of sequences after tokenization.
+        shuffle (bool): Flag indicating whether to shuffle the data.
+        lower_case (bool): Flag indicating whether to convert text to lowercase.
+        random_state: Random state generator for reproducibility.
+        filenames (list): List of file names containing the data.
+        tokenizer: Instance of the EnglishDataTokenizer for text processing.
+        fetching_executor: ThreadPoolExecutor for asynchronous data fetching.
     """
 
-    def __init__(self, data_dir, tokenizer_path, max_length,
-                 buffer_size=1024, batch_size=64, shuffle=True,
-                 lower_case=False, seed=0):
-        assert buffer_size >= batch_size, "buffer_size should be equal or greater than batch_size"
+    def __init__(self, config):
+        assert config.buffer_size >= config.batch_size, "buffer_size should be equal or greater than batch_size"
 
         # Initialize attributes
         self.buffer_idx = 0
-        self.buffer_size = buffer_size
-        self.batch_size = batch_size
-        self.tokenizer_path = tokenizer_path
-        self.max_length = max_length
-        self.shuffle = shuffle
-        self.lower_case = lower_case
-        self.random_state = np.random.RandomState(seed)
-        self.buffer = []  
+        self.buffer = []
         self.ptr = 0
         self.flag = False
-        self.filenames = self.get_filenames(data_dir)
-        self.tokenizer = EnglishDataTokenizer(tokenizer_path, max_length)
-        self.fetch_to_buffer()
         self.fetching_thread = None
+        self.dataset_type = config.dataset_type # 
+        self.buffer_size = config.buffer_size
+        self.batch_size = config.batch_size
+        self.tokenizer_path = config.tokenizer_path
+        self.max_length = config.max_length
+        self.shuffle = config.shuffle
+        self.lower_case = config.lower_case
+        self.random_state = np.random.RandomState(config.seed)
+        self.filenames = self.get_filenames(config.data_dir)
+        self.tokenizer = EnglishDataTokenizer(config.tokenizer_path, config.max_length)
+        self.fetch_to_buffer()
         self.fetching_executor = ThreadPoolExecutor(max_workers=1)
         self.start_fetching()
 
     def __len__(self):
         return int(np.ceil(len(self.filenames) / self.batch_size))
-        
+
     def fetch_to_buffer(self):
         #print("Fetching...")
         self.buffer = self.buffer[self.ptr:]
         self.ptr = 0
-        
+
         def custom_standardization(sentence):
             """ Remove html line-break tags and lowercasing """
             sentence = re.sub("<br />", " ", sentence).strip()
@@ -190,14 +201,33 @@ class EnglishDataStreamer(DataStreamer):
 
         return prepare_lm_inputs_labels(batch)
 
-    def get_filenames(self, data_dir):
-        filenames = []
-        for root, dirs, files in os.walk(data_dir):
-            for file in files:
-                filenames.append(os.path.join(root, file))
-        return filenames
+    def get_filenames(self):
+        if self.dataset_type not in ["train", "valid"]:
+            raise ValueError("Invalid dataset type. Choose 'train' or 'valid'.")
+
+        base_dir = "aclImdb"
+
+        if self.dataset_type == "train":
+            dataset_dirs = ["train", "test"]
+        else:
+            dataset_dirs = [self.dataset_type]
+
+        all_files = []
+
+        for dataset_dir in dataset_dirs:
+            dataset_dir = os.path.join(base_dir, dataset_dir)
+            pos_dir = os.path.join(dataset_dir, "pos")
+            neg_dir = os.path.join(dataset_dir, "neg")
+
+            pos_files = [os.path.join(pos_dir, filename) for filename in os.listdir(pos_dir)]
+            neg_files = [os.path.join(neg_dir, filename) for filename in os.listdir(neg_dir)]
+
+            # Combine positive and negative file lists
+            all_files.extend(pos_files)
+            all_files.extend(neg_files)
+
+        return all_files
 
     def reset(self):
         self.buffer_idx = 0
         self.fetch_to_buffer()
-
