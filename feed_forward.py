@@ -13,7 +13,7 @@ class FeedForward(tf.keras.layers.Layer):
     """
 
     def __init__(self, config, name=None, **kwargs):
-        super(Decoder, self).__init__(name=name, **kwargs)
+        super(FeedForward, self).__init__(name=name, **kwargs)
         self.supports_masking = True
         self.fc1 = tf.keras.layers.Dense(config.intermediate_fc_size, activation=tf.keras.activations.gelu)
         self.fc2 = tf.keras.layers.Dense(config.hidden_size)
