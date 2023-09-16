@@ -20,7 +20,7 @@ class GPT(tf.keras.Model):
 
     def __init__(self, config, name=None, **kwargs):
         super(GPT, self).__init__(name=name, **kwargs)
-        self.embed_layer = Embeddings(config, config.vocab_size, name="embeddings")
+        self.embed_layer = Embeddings(config, name="embeddings")
         self.decoder = [Decoder(config) for _ in range(config.num_blocks)]
         self.dropout = tf.keras.layers.Dropout(config.final_dropout_prob)
         self.output_layer = tf.keras.layers.Dense(config.vocab_size, name="output_layer")
@@ -64,4 +64,3 @@ class GPT(tf.keras.Model):
             "output_layer": self.output_layer,
         })
         return config
-
