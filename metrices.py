@@ -1,76 +1,40 @@
 import tensorflow as tf
 
-def masked_accuracy(label, pred):
-    """
-    Computes the masked accuracy between the predicted and target labels.
+class Perplexity(tf.keras.metrics.Metric):
+    def __init__(self, name='perplexity', **kwargs):
+        super(Perplexity, self).__init__(name=name, **kwargs)
+        self.loss_sum = self.add_weight(name='loss_sum', initializer='zeros')
+        self.count = self.add_weight(name='count', initializer='zeros')
 
-    Args:
-        label: Target label tensor.
-        pred: Predicted label tensor.
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        loss = tf.keras.losses.sparse_categorical_crossentropy(y_true, y_pred)
+        mask = y_true != 50357
+        # Apply the mask to ignore padded tokens in the loss calculation
+        mask = tf.cast(mask, dtype=loss.dtype)
+        loss *= mask
+        self.loss_sum.assign_add(tf.reduce_sum(loss))
+        self.count.assign_add(tf.reduce_sum(tf.cast(mask, tf.float32)))
 
-    Returns:
-        Masked accuracy value.
-    """
-    # Get the predicted labels by taking the argmax along the last dimension
-    pred_labels = tf.argmax(pred, axis=2)
+    def result(self):
+        return tf.pow(2.0, self.loss_sum / self.count)
 
-    # Convert the target labels to the same data type as the predicted labels
-    label = tf.cast(label, pred_labels.dtype)
 
-    # Compute a binary tensor for matching predicted and target labels
-    match = label == pred_labels
+class MaskedAccuracy(tf.keras.metrics.Metric):
+    def __init__(self, name='masked_accuracy', **kwargs):
+        super(MaskedAccuracy, self).__init__(name=name, **kwargs)
+        self.total_matches = self.add_weight(name='total_matches', initializer='zeros')
+        self.total_tokens = self.add_weight(name='total_tokens', initializer='zeros')
 
-    # Create a mask to ignore padded tokens
-    mask = label != 0
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        pred_labels = tf.argmax(y_pred, axis=2)
+        y_true = tf.cast(y_true, pred_labels.dtype)
+        match = y_true == pred_labels
+        mask = y_true != 50357
+        match = match & mask
+        match = tf.cast(match, dtype=tf.float32)
+        mask = tf.cast(mask, dtype=tf.float32)
+        self.total_matches.assign_add(tf.reduce_sum(match))
+        self.total_tokens.assign_add(tf.reduce_sum(mask))
 
-    # Apply the mask to the matching tensor
-    match = match & mask
-
-    # Convert the binary tensor to floating-point values
-    match = tf.cast(match, dtype=tf.float32)
-    mask = tf.cast(mask, dtype=tf.float32)
-
-    # Compute the accuracy over non-padded tokens
-    return tf.reduce_sum(match) / tf.reduce_sum(mask)
-
-def perplexity(label, pred):
-    """
-    Computes the perplexity metric based on the Categorical Cross Entropy (CCE) loss.
-
-    Args:
-        label: Target label tensor.
-        pred: Predicted logit tensor.
-
-    Returns:
-        Computed perplexity value.
-    """
-    # Create a mask to ignore padded tokens
-    mask = label != 0
-
-    # Use Categorical Cross Entropy with optional label smoothing
-    scc_loss = tf.keras.losses.CategoricalCrossentropy(
-        from_logits=True, label_smoothing=0.1, reduction='none')
-
-    # Convert label to one-hot encoding
-    label = tf.one_hot(tf.cast(label, tf.int32), config.target_vocab_size)
-
-    # Compute the loss with the label smoothing
-    loss = scc_loss(label, pred)
-
-    # Apply the mask to ignore padded tokens in the loss calculation
-    mask = tf.cast(mask, dtype=loss.dtype)
-    loss *= mask
-
-    # Compute the sum of losses over non-padded tokens
-    total_loss = tf.reduce_sum(loss)
-
-    # Compute the total number of non-padded tokens
-    total_tokens = tf.reduce_sum(mask)
-
-    # Compute the average loss over non-padded tokens
-    avg_loss = total_loss/total_tokens
-
-    # Compute perplexity as 2 raised to the power of the average loss
-    perplexity = 2 ** avg_loss
-
-    return perplexity
+    def result(self):
+        return self.total_matches / self.total_tokens
