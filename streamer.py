@@ -1,78 +1,3 @@
-import os, re
-import threading
-import numpy as np
-import tensorflow as tf
-from abc import ABCMeta, abstractmethod
-from concurrent.futures import ThreadPoolExecutor
-
-
-class DataStreamer(metaclass=ABCMeta):
-    """
-    A data streamer for loading and iterating over tokenized data sequences in batches.
-
-    Methods:
-        __len__(): Returns the number of batches in the dataset.
-        _fetch_to_buffer(): Fetches data from files into the buffer.
-        __iter__(): Returns the iterator object.
-        _start_fetching(): Starts the background fetching of data.
-        __next__(): Returns the next batch of tokenized sequences.
-        _get_filenames(data_dir): Retrieves a list of file paths from subdirectories.
-        _reset(): Resets the buffer index and fetches new data if necessary.
-    """
-
-    @abstractmethod
-    def __len__(self):
-        """
-        Calculates the number of batches in the dataset.
-
-        Returns:
-            int: Number of batches.
-        """
-
-    @abstractmethod
-    def fetch_to_buffer(self):
-        """
-        Fetches data from files into the internal buffer using parallelization.
-        """
-
-    @abstractmethod
-    def __iter__(self):
-        """
-        Returns the iterator object for iterating over batches of data.
-        """
-
-    @abstractmethod
-    def start_fetching(self):
-        """
-        Starts the background fetching of data.
-        """
-
-    @abstractmethod
-    def __next__(self):
-        """
-        Retrieves the next batch of sentences from the buffer.
-
-        Returns:
-            list: Batch of sentences.
-        Raises:
-            StopIteration: If there is no more data to retrieve.
-        """
-
-    @abstractmethod
-    def get_filenames(self):
-        """
-        Retrieves a list of file paths from subdirectories within the given root directory.
-
-        Returns:
-            list: List of file paths.
-        """
-
-    @abstractmethod
-    def reset(self):
-        """
-        Resets the buffer index and fetches new data if necessary.
-        """
-
 class EnglishDataStreamer(DataStreamer):
     """
     A specialized implementation of DataStreamer for handling English language data.
@@ -89,21 +14,20 @@ class EnglishDataStreamer(DataStreamer):
         buffer (list): List to hold fetched data for efficient batching.
         ptr (int): Pointer for data processing within the buffer.
         flag (bool): Flag indicating the status of data fetching.
-        fetching_thread: Thread for fetching data asynchronously.
         dataset_type (str): Either "train" or "valid".
+        data_dir (str): dataset diractory.
         buffer_size (int): Size of the buffer for holding fetched data.
         batch_size (int): Size of each batch of data to be processed.
         tokenizer_path (str): Path to the tokenizer used for text processing.
-        max_length (int): Maximum length of sequences after tokenization.
+        sequence_length (int): Maximum length of sequences after tokenization.
         shuffle (bool): Flag indicating whether to shuffle the data.
         lower_case (bool): Flag indicating whether to convert text to lowercase.
         random_state: Random state generator for reproducibility.
         filenames (list): List of file names containing the data.
         tokenizer: Instance of the EnglishDataTokenizer for text processing.
-        fetching_executor: ThreadPoolExecutor for asynchronous data fetching.
     """
 
-    def __init__(self, config):
+    def __init__(self, config, dataset_type):
         assert config.buffer_size >= config.batch_size, "buffer_size should be equal or greater than batch_size"
 
         # Initialize attributes
@@ -111,20 +35,18 @@ class EnglishDataStreamer(DataStreamer):
         self.buffer = []
         self.ptr = 0
         self.flag = False
-        self.fetching_thread = None
-        self.dataset_type = config.dataset_type # 
+        self.dataset_type = dataset_type
+        self.data_dir = config.data_dir
         self.buffer_size = config.buffer_size
         self.batch_size = config.batch_size
         self.tokenizer_path = config.tokenizer_path
-        self.max_length = config.max_length
+        self.sequence_length = config.sequence_length
         self.shuffle = config.shuffle
         self.lower_case = config.lower_case
         self.random_state = np.random.RandomState(config.seed)
-        self.filenames = self.get_filenames(config.data_dir)
-        self.tokenizer = EnglishDataTokenizer(config.tokenizer_path, config.max_length)
+        self.filenames = self.get_filenames()
+        self.tokenizer = EnglishDataTokenizer(config.tokenizer_path, config.sequence_length)
         self.fetch_to_buffer()
-        self.fetching_executor = ThreadPoolExecutor(max_workers=1)
-        self.start_fetching()
 
     def __len__(self):
         return int(np.ceil(len(self.filenames) / self.batch_size))
@@ -146,7 +68,12 @@ class EnglishDataStreamer(DataStreamer):
             with open(filename, "r") as file:
                 sentence = file.readline()
                 sentence = custom_standardization(sentence)
-                return self.tokenizer.tokenize(sentence)
+                try:
+                    tokenized_sentence = self.tokenizer.tokenize(sentence)
+                except:
+                    print(sentence)
+                    raise ValueError("MyError")
+                return tokenized_sentence
 
         with ThreadPoolExecutor() as executor:
             sentences = sentences = list(executor.map(process_data, self.filenames[self.buffer_idx:self.buffer_idx + self.buffer_size]))
@@ -164,11 +91,15 @@ class EnglishDataStreamer(DataStreamer):
     def __iter__(self):
         return self
 
-    def start_fetching(self):
-        if not self.fetching_thread or not self.fetching_thread.is_alive():
-            self.fetching_thread = self.fetching_executor.submit(self.fetch_to_buffer)
-
     def __next__(self):
+        """
+        Retrieves the next batch of sentences from the buffer.
+
+        Returns:
+            list: Batch of sentences.
+        Raises:
+            StopIteration: If there is no more data to retrieve.
+        """
         def prepare_lm_inputs_labels(batch):
             """
             Shift word sequences by 1 position so that the target for position (i) is
@@ -182,16 +113,11 @@ class EnglishDataStreamer(DataStreamer):
 
         if self.flag:
             self.flag = False
+            self.reset()
             raise StopIteration
 
-        if self.ptr + self.batch_size > len(self.buffer):
-            # Wait for the fetching_thread to complete and update the buffer
-            self.fetching_thread.result()
-            self.fetching_thread = None
-
-            # Load the next batch if available
-            if self.buffer_idx < len(self.filenames):
-                self._start_fetching()
+        if self.ptr + self.batch_size > self.buffer_size:
+            self.fetch_to_buffer()
 
         batch = self.buffer[self.ptr:self.ptr + self.batch_size]
         self.ptr += self.batch_size
@@ -201,11 +127,13 @@ class EnglishDataStreamer(DataStreamer):
 
         return prepare_lm_inputs_labels(batch)
 
+
+
     def get_filenames(self):
         if self.dataset_type not in ["train", "valid"]:
             raise ValueError("Invalid dataset type. Choose 'train' or 'valid'.")
 
-        base_dir = "aclImdb"
+        base_dir = self.data_dir
 
         if self.dataset_type == "train":
             dataset_dirs = ["train", "test"]
