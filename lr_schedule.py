@@ -23,11 +23,11 @@ class LrSchedule(tf.keras.optimizers.schedules.LearningRateSchedule):
         get_config: Returns the configuration dictionary of the learning rate schedule.
     """
 
-    def __init__(self, config):
+    def __init__(self, config, total_number_of_training_samples):
         super(LrSchedule, self).__init__()
         self.warmup_steps = config.warmup_steps
         self.max_learning_rate = config.max_learning_rate
-        self.total_steps = config.num_epochs * (config.total_number_of_training_samples // config.batch_size)
+        self.total_steps = config.num_epochs * (total_number_of_training_samples // config.batch_size)
         self.learning_rate_schedule = tf.keras.optimizers.schedules.PolynomialDecay(
             initial_learning_rate=0.0,
             decay_steps=self.warmup_steps,
@@ -49,9 +49,15 @@ class LrSchedule(tf.keras.optimizers.schedules.LearningRateSchedule):
         Returns:
             Learning rate for the given step.
         """
-        if step < self.warmup_steps:
-            return self.learning_rate_schedule(step)
-        return self.cosine_schedule(step - self.warmup_steps)
+        def learning_rate_fn(step):
+            if step < self.warmup_steps:
+                return self.learning_rate_schedule(step)
+            return self.cosine_schedule(step - self.warmup_steps)
+
+        return tf.cond(step < self.warmup_steps,
+                       lambda: self.learning_rate_schedule(step),
+                       lambda: self.cosine_schedule(step - self.warmup_steps))
+
 
     def get_config(self):
         """
