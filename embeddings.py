@@ -8,7 +8,6 @@ class Embeddings(tf.keras.layers.Layer):
 
     Args:
         config (object): Configuration object containing parameters.
-        vocab_size: Vocabulary size.
 
     Attributes:
         token_embeddings (tf.keras.layers.Embedding): Token embedding layer.
@@ -16,10 +15,10 @@ class Embeddings(tf.keras.layers.Layer):
         norm (tf.keras.layers.LayerNormalization): Layer normalization for normalization.
     """
 
-    def __init__(self, config, vocab_size, name = None,  **kwargs):
+    def __init__(self, config, name = None,  **kwargs):
         super(Embeddings, self).__init__(name=name, **kwargs)
         self.token_embeddings = tf.keras.layers.Embedding(
-            input_dim= vocab_size, output_dim=config.hidden_size
+            input_dim= config.vocab_size, output_dim=config.hidden_size
         )
         self.PositionalInfo = PositionalEmbeddings(config)
         self.dropout = tf.keras.layers.Dropout(config.hidden_dropout_prob)
@@ -54,7 +53,7 @@ class Embeddings(tf.keras.layers.Layer):
         Returns:
             tf.Tensor: Computed mask tensor.
         """
-        return tf.math.not_equal(inputs, 0)
+        return tf.math.not_equal(inputs, 50357)
 
     def get_config(self):
         """
