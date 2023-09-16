@@ -83,7 +83,7 @@ class MultiHead_Attention(tf.keras.layers.Layer):
     """
 
     def __init__(self, config, name=None, **kwargs):
-        super(Decoder, self).__init__(name=name, **kwargs)
+        super(MultiHead_Attention, self).__init__(name=name, **kwargs)
         self.supports_masking = True
         self.hidden_size = config.hidden_size
         self.num_heads = config.num_heads
