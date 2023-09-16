@@ -27,7 +27,7 @@ class PositionalEmbeddings(tf.keras.layers.Layer):
         Returns:
             tf.Tensor: Positional embeddings tensor of shape (batch_size, seq_length, hidden_size).
         """
-        seq_length = input_ids.shape[1]
+        seq_length = tf.shape(input_ids)[1]
         position_ids = tf.range(seq_length, dtype=tf.int32)[tf.newaxis, :]
         position_embeddings = self.positional_embeddings(position_ids)
         return position_embeddings
