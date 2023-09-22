@@ -1,5 +1,7 @@
 import tensorflow as tf
-
+"""
+Note that the ID of the filler code I use is 50375, and this may change depending on the tokenizer used. This also changes if you train tokenize.
+"""
 def loss_fn(label, pred):
     """
     Computes the masked Sparse Categorical Cross Entropy (SCCE) loss between the predicted and target labels.
