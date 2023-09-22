@@ -72,7 +72,7 @@ Detailed project documentation can be found in the `demo/` directory. It include
    ```
 6. Train the GPT model (provide more specific instructions if needed):
    * To start training from scratch: `python train.py`
-   * To resume training from a checkpoint: `python train.py --resume
+   * To resume training from a checkpoint: `python train.py --resume`
 `
 7. Generate Sentences. You can use the following command to generate text using your script:
    ```bash
