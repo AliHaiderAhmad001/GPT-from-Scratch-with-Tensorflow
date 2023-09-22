@@ -1,69 +1,53 @@
 class Config:
+    """
+    Configuration class for GPT-based text generation model.
+
+    Attributes:
+        tokenizer_path (str): The path to the pre-trained tokenizer.
+        data_dir (str): Directory containing the training data.
+        checkpoint_directory (str): Directory to save model and optimizer checkpoints.
+        model_weights_checkpoint_directory (str): Directory to save model wights checkpoints.
+        shuffle (bool): Whether to shuffle the training data.
+        lower_case (bool): Whether to convert text to lowercase during preprocessing.
+        remove_punctuation (bool): Whether to remove punctuation during preprocessing.
+        sequence_length (int): The maximum sequence length for input data.
+        buffer_size (int): Size of the data buffer for shuffling.
+        batch_size (int): Batch size for training.
+        seed (int): Random seed for reproducibility.
+        vocab_size (int): Vocabulary size, including the PAD token.
+        hidden_size (int): Size of the hidden layers in the model.
+        intermediate_fc_size (int): Size of intermediate fully connected layers.
+        warmup_steps (int): Number of warm-up steps for learning rate scheduling.
+        max_learning_rate (float): Maximum learning rate for training.
+        hidden_dropout_prob (float): Dropout probability for hidden layers.
+        num_heads (int): Number of attention heads in the model.
+        final_dropout_prob (float): Dropout probability for the final layer.
+        num_blocks (int): Number of transformer blocks in the model.
+        num_epochs (int): Number of training epochs.
+        patience (int): Number of epochs with no improvement to trigger early stopping.
+    """
+
     def __init__(self):
-        """
-        Configuration class for transformer model hyperparameters.
-
-        Attributes:
-            sequence_length: Maximum sequence length for input sequences.
-            hidden_size: Hidden size for the transformer model.
-            frequency_factor: Frequency factor for positional encodings.
-            source_vocab_size: Vocabulary size for the source language.
-            target_vocab_size: Vocabulary size for the target language.
-            positional_information_type: Type of positional embeddings to use.
-            hidden_dropout_prob: Dropout probability for the hidden layers.
-            num_heads: Number of attention heads in multi-head attention.
-            intermediate_fc_size: Size of the intermediate fully connected layer.
-            warmup_steps: Number of warm-up steps for learning rate scheduling.
-            num_blocks: Number of encoder and decoder blocks in the transformer.
-            final_dropout_prob: Dropout probability for the final output.
-            epochs: Number of epochs for training.
-            checkpoint_filepath: Filepath for saving model checkpoints.
-            patience: Number of epochs with no improvement after which training will be stopped.
-
-        """
-        self.sequence_length = 60
+        self.tokenizer_path = "tokenizer/adapted-tokenizer"
+        self.data_dir = 'aclImdb'
+        self.checkpoint_directory = 'tmp/checkpoint'
+        self.model_weights_checkpoint_directory = 'tmp/weights_checkpoint'
+        self.shuffle = True
+        self.lower_case = True
+        self.remove_punctuation = True
+        self.sequence_length = 128
+        self.buffer_size = 42500
+        self.batch_size = 64
+        self.seed = 2023
+        self.vocab_size = 50357+1  # Because we have added the PAD token.
         self.hidden_size = 256
-        self.socab_size = 31405
-        self.hidden_dropout_prob = 0.1
-        self.num_heads = 4
         self.intermediate_fc_size = self.hidden_size * 4
         self.warmup_steps = 4000
-        self.num_blocks = 2
-        self.final_dropout_prob = 0.5
-        self.epochs = 30
-        self.checkpoint_filepath = '/content/drive/MyDrive/Colab Notebooks/NMT/tmp/checkpoint'
-        self.patience = 3class Config:
-    def __init__(self):
-        """
-        Configuration class for transformer model hyperparameters.
-
-        Attributes:
-            sequence_length: Maximum sequence length for input sequences.
-            hidden_size: Hidden size for the transformer model.
-            frequency_factor: Frequency factor for positional encodings.
-            source_vocab_size: Vocabulary size for the source language.
-            target_vocab_size: Vocabulary size for the target language.
-            positional_information_type: Type of positional embeddings to use.
-            hidden_dropout_prob: Dropout probability for the hidden layers.
-            num_heads: Number of attention heads in multi-head attention.
-            intermediate_fc_size: Size of the intermediate fully connected layer.
-            warmup_steps: Number of warm-up steps for learning rate scheduling.
-            num_blocks: Number of encoder and decoder blocks in the transformer.
-            final_dropout_prob: Dropout probability for the final output.
-            epochs: Number of epochs for training.
-            checkpoint_filepath: Filepath for saving model checkpoints.
-            patience: Number of epochs with no improvement after which training will be stopped.
-
-        """
-        self.sequence_length = 60
-        self.hidden_size = 256
-        self.socab_size = 31405
+        self.max_learning_rate = 2.5e-4
+        self.total_number_of_training_samples = 42500
         self.hidden_dropout_prob = 0.1
         self.num_heads = 4
-        self.intermediate_fc_size = self.hidden_size * 4
-        self.warmup_steps = 4000
-        self.num_blocks = 2
         self.final_dropout_prob = 0.5
-        self.epochs = 30
-        self.checkpoint_filepath = '/content/drive/MyDrive/Colab Notebooks/NMT/tmp/checkpoint'
-        self.patience = 3
+        self.num_blocks = 2
+        self.num_epochs = 20
+        self.patience = 4
