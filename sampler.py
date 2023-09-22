@@ -1,5 +1,7 @@
-from transformers import AutoTokenizer
+import numpy as np
+import tensorflow as tf
 from abc import ABCMeta, abstractmethod
+from tokenizer import EnglishDataTokenizer
 
 class Sampler(metaclass=ABCMeta):
     """
@@ -17,7 +19,7 @@ class Sampler(metaclass=ABCMeta):
         Returns:
             str: The generated output sentence.
         """
-        pass
+
 
 class GreedySampler(Sampler):
     """
@@ -35,19 +37,9 @@ class GreedySampler(Sampler):
         end_token (int or None, optional): An optional token ID that signifies the end of decoding. If
             provided, decoding will stop when this token is predicted. Defaults to None.
 
-    Example:
-        # Create a GreedySampler instance
-        sampler = GreedySampler(model, tokenizer_path, sequence_length, end_token=5)
-
-        # Generate text based on an input prompt
-        input_prompt = "Once upon a time,"
-        generated_text = sampler.decode(input_prompt)
-
-        # Print the generated text
-        print("Generated Text:", generated_text)
     """
 
-    def __init__(self, model, tokenizer_path, sequence_length, end_token=None):
+    def __init__(self, model, tokenizer_path, sequence_length, end_token=0):
         """
         Initialize the GreedySampler.
 
@@ -59,7 +51,7 @@ class GreedySampler(Sampler):
                 If provided, decoding will stop when this token is predicted. Defaults to None.
         """
         self.model = model
-        self.tokenizer = EnglishDataTokenizer(tokenizer_path, sequence_length)
+        self.tokenizer = EnglishDataTokenizer(tokenizer_path, sequence_length, training=False)
         self.sequence_length = sequence_length
         self.end_token = end_token
 
@@ -81,115 +73,70 @@ class GreedySampler(Sampler):
             if self.end_token is not None and predicted_id == self.end_token:
                 break
 
-        generated_text = self.tokenizer.decode(input_ids.numpy()[0])
+        generated_text = self.tokenizer.detokenize(input_ids.numpy()[0])
 
         return generated_text
-
-
+        
 class BeamSearchSampler(Sampler):
-    """
-    Beam search sampling strategy for text generation using a transformer-based language model.
-
-    Args:
-        model: The transformer-based language model.
-        tokenizer_path (str): The name or path of the pre-trained tokenizer.
-        sequence_length (int): The maximum length of tokenized sequences.
-        beam_width (int): The beam width for beam search.
-        end_token (int or None, optional): An optional token ID that signifies the end of decoding. If
-            provided, decoding will stop when this token is predicted. Defaults to None.
-
-    Example:
-        # Create a BeamSearchSampler instance
-        sampler = BeamSearchSampler(model, tokenizer_path, sequence_length, beam_width=5)
-
-        # Generate text based on an input prompt
-        input_prompt = "Once upon a time,"
-        generated_text = sampler.decode(input_prompt)
-
-        # Print the generated text
-        print("Generated Text:", generated_text)
-    """
-
-    def __init__(self, model, tokenizer_path, sequence_length, beam_width, end_token=None):
+    def __init__(self, model, tokenizer, sequence_length, beam_width=2, end_token=0):
         """
         Initialize the BeamSearchSampler.
 
         Args:
-            model: The transformer-based language model.
-            tokenizer_path (str): The name or path of the pre-trained tokenizer.
-            sequence_length (int): The maximum length of tokenized sequences.
-            beam_width (int): The beam width for beam search.
-            end_token (int or None, optional): An optional token ID that signifies the end of decoding.
-                If provided, decoding will stop when this token is predicted. Defaults to None.
+            model: The language model used for text generation.
+            tokenizer: The tokenizer used for tokenizing text.
+            sequence_length (int): The maximum sequence length for generated text.
+            beam_width (int): Width of the beam search (number of beams). Default is 2.
+            end_token (int or None): The token indicating the end of a sequence, if applicable. Default is None.
         """
         self.model = model
-        self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
+        self.tokenizer = EnglishDataTokenizer(tokenizer_path, sequence_length, training=False)
         self.sequence_length = sequence_length
         self.beam_width = beam_width
         self.end_token = end_token
 
     def decode(self, input_prompt):
         """
-        Decode a sentence based on beam search sampling strategy.
+        Decode a text sequence based on beam search.
 
         Args:
-            input_prompt (str): The input sentence or prompt.
+            input_prompt (str): The input text or prompt.
 
         Returns:
-            str: The generated output sentence.
+            str: The generated output text.
         """
-        input_ids = self.tokenizer.encode(input_prompt, return_tensors="tf")
-        input_ids = tf.repeat(input_ids, self.beam_width, axis=0)
-        input_ids = tf.pad(input_ids, [[0, 0], [0, self.sequence_length - input_ids.shape[1]]])
+        input_ids = np.reshape(self.tokenizer.tokenize(input_prompt), (1, -1))
+        iterations = self.sequence_length - input_ids.shape[-1]
 
-        beam_scores = tf.zeros((self.beam_width,), dtype=tf.float32)
-        beam_hypotheses = [tf.constant([], dtype=tf.int32) for _ in range(self.beam_width)]
-        done_beams = []
+        # Create an initial beam of size 1
+        beams = [(input_ids, tf.constant(0.0, dtype=tf.float32))]
 
-        for step in range(self.sequence_length):
-            # Expand beams
-            if step > 0:
-                input_ids = tf.repeat(input_ids, self.beam_width, axis=0)
+        for k in range(iterations):
+            all_candidates = []
+            # Expand each beam
+            for beam_input_ids, beam_score in beams:
+                logits = self.model(beam_input_ids)
+                last_token_logits = logits[:, -1, :]
+                # Use top-k sampling to get the most likely next tokens
+                top_k = tf.math.top_k(last_token_logits, self.beam_width)
+                next_token_ids = top_k.indices
+                log_probs = top_k.values
 
-            # Get predictions
-            predictions = self.model(input_ids, training=False)
-            vocab_size = predictions.shape[-1]
+                for i in range(self.beam_width):
+                    if self.end_token is not None and next_token_ids[0, i] == self.end_token:
+                        # End of sequence
+                        all_candidates.append((beam_input_ids, beam_score))
+                        continue
 
-            # Calculate scores for all possible tokens
-            if step == 0:
-                scores = tf.math.log(predictions[0, 0, :])
-            else:
-                scores = tf.reshape(beam_scores, (-1, 1)) + tf.math.log(predictions)
+                    new_beam_input_ids = tf.concat([beam_input_ids, tf.reshape(next_token_ids[0, i], (1, 1))], axis=-1)
+                    new_beam_score = beam_score - log_probs[0, i]
+                    all_candidates.append((new_beam_input_ids, new_beam_score))
 
-            # Get the top-k token indices for each beam
-            top_k_scores, top_k_indices = tf.math.top_k(scores, k=self.beam_width, sorted=False)
+            # Select the top-k candidates from all expanded beams
+            all_candidates = sorted(all_candidates, key=lambda x: x[1])
+            beams = all_candidates[:self.beam_width]
 
-            new_beam_scores = []
-            new_beam_hypotheses = []
-
-            # Update beams
-            for i in range(self.beam_width):
-                token_idx = top_k_indices[i]
-                score = top_k_scores[i]
-
-                # Check for end token
-                if self.end_token is not None and token_idx == self.end_token:
-                    done_beams.append((beam_scores[i], beam_hypotheses[i]))
-                else:
-                    new_beam_scores.append(score)
-                    new_beam_hypotheses.append(tf.concat([beam_hypotheses[i], [token_idx]], axis=0))
-
-            beam_scores = tf.stack(new_beam_scores)
-            beam_hypotheses = new_beam_hypotheses
-
-            # Check if all beams are done
-            if len(done_beams) == self.beam_width:
-                break
-
-        # Sort the completed beams by score and get the best one
-        done_beams.sort(key=lambda x: x[0], reverse=True)
-        best_beam = done_beams[0][1]
-
-        generated_text = self.tokenizer.decode(best_beam.numpy())
-        return generated_text
-
+        # Return the best beam at the end
+        best_beam = min(beams, key=lambda x: x[1])
+        #print(best_beam[0])
+        return self.tokenizer.detokenize(best_beam[0][0])
