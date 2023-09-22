@@ -80,11 +80,11 @@ The data loader I use requires the validation set to be in a separate folder.
    * To resume training from a checkpoint: `python train.py --resume`
 8. Generate Sentences. You can use the following command to generate text using your script:
    ```bash
-   python your_script.py "input_text_prompt" --sampler "greedy"  # For greedy sampling
+   python inferance.py "input_text_prompt" --sampler "greedy"  # For greedy sampling
    ```
    Or:
    ```bash
-   python your_script.py "input_text_prompt" --sampler "beam" --beam_width 5  # For beam search sampling with a beam width of 5
+   python inferance.py "input_text_prompt" --sampler "beam" --beam_width 5  # For beam search sampling with a beam width of 5
    ```
 
 ## License
