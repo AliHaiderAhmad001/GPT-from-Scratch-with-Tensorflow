@@ -1,4 +1,6 @@
 import tensorflow as tf
+from decoder import Decoder
+from embeddings import Embeddings
 
 class GPT(tf.keras.Model):
     """
