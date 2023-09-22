@@ -73,12 +73,13 @@ Detailed project documentation can be found in the `demo/` directory. It include
 6. Train the GPT model (provide more specific instructions if needed):
    * To start training from scratch: `python train.py`
    * To resume training from a checkpoint: `python train.py --resume`
-`
 7. Generate Sentences. You can use the following command to generate text using your script:
    ```bash
- python your_script.py "input_text_prompt" --sampler "greedy"  # For greedy sampling
- python your_script.py "input_text_prompt" --sampler "beam" --beam_width 5  # For beam search sampling with a beam width of 5
-
+   python your_script.py "input_text_prompt" --sampler "greedy"  # For greedy sampling
+   ```
+   Or:
+   ```bash
+   python your_script.py "input_text_prompt" --sampler "beam" --beam_width 5  # For beam search sampling with a beam width of 5
    ```
 
 ## License
