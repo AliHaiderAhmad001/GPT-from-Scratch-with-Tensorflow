@@ -4,34 +4,13 @@ import concurrent.futures
 from transformers import AutoTokenizer
 from abc import ABCMeta, abstractmethod
 
-class DataTokenizer(metaclass=ABCMeta):
-    """
-    A wrapper class for tokenizing sentences using the Hugging Face transformers library.
-
-    Methods:
-        tokenize(sentence): Tokenizes a sentence and returns the tokenized input IDs.
-    """
-
-    @abstractmethod
-    def tokenize(self, sentence):
-        """
-        Tokenizes a sentence and returns the tokenized input IDs.
-
-        Args:
-            sentence (str): The input sentence to be tokenized.
-
-        Returns:
-            List[int]: Tokenized input IDs.
-        """
-        pass
-
 class BPETrainer(DataTokenizer):
     def __init__(self, model="gpt2"):
         self.tokenizer = AutoTokenizer.from_pretrained(model)
 
     def train(self, data_dir, batch_size=1000, vocab_size=50357, save=True, save_fp='tokenizer/adapted-tokenizer'):
         """
-        Trains the tokenizer on a new corpus using BPE.
+        Retrains GPT tokenizer on a new corpus.
 
         Args:
             data_dir (str): Corpus directory path.
