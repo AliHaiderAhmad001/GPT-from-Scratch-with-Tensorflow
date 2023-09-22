@@ -30,9 +30,12 @@ There are several versions of the GPT. This implementation focuses mainly on the
 - `gpt_model.py`: Main GPT model implementation.
 - `bpe_tokenizer.py`: Tokenizer for BPE (Byte Pair Encoding) tokenization.
 - `tokenizer.py`: Pre-trained GPT tokenizer.
+- `prepare_dataset.py`: A file through which we perform some operations on the dataset (creating a special folder for validation data).
+- `inferance.py`: A file needed to generate sentences from the model based on the input prompt.
 - `tmp/`: Directory for storing model checkpoints.
 - `demo/`: Project documentation.
 - `tokenizer/`: Directory for saving the retrained tokenizer.
+- `dummy_data/`: Directory in which we put some data to test the streamer.
 
 ## Requirements
 
