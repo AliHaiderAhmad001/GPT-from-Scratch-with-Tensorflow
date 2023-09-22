@@ -1,3 +1,72 @@
+import string
+import os, re
+import threading
+import numpy as np
+import tensorflow as tf
+from tokenizer import EnglishDataTokenizer
+from abc import ABCMeta, abstractmethod
+from concurrent.futures import ThreadPoolExecutor
+
+class DataStreamer(metaclass=ABCMeta):
+    """
+    A data streamer for loading and iterating over tokenized data sequences in batches.
+
+    Methods:
+        __len__(): Returns the number of batches in the dataset.
+        _fetch_to_buffer(): Fetches data from files into the buffer.
+        __iter__(): Returns the iterator object.
+        __next__(): Returns the next batch of tokenized sequences.
+        _get_filenames(data_dir): Retrieves a list of file paths from subdirectories.
+        _reset(): Resets the buffer index and fetches new data if necessary.
+    """
+
+    @abstractmethod
+    def __len__(self):
+        """
+        Calculates the number of batches in the dataset.
+
+        Returns:
+            int: Number of batches.
+        """
+
+    @abstractmethod
+    def fetch_to_buffer(self):
+        """
+        Fetches data from files into the internal buffer using parallelization.
+        """
+
+    @abstractmethod
+    def __iter__(self):
+        """
+        Returns the iterator object for iterating over batches of data.
+        """
+
+    @abstractmethod
+    def __next__(self):
+        """
+        Retrieves the next batch of sentences from the buffer.
+
+        Returns:
+            list: Batch of sentences.
+        Raises:
+            StopIteration: If there is no more data to retrieve.
+        """
+
+    @abstractmethod
+    def get_filenames(self):
+        """
+        Retrieves a list of file paths from subdirectories within the given root directory.
+
+        Returns:
+            list: List of file paths.
+        """
+
+    @abstractmethod
+    def reset(self):
+        """
+        Resets the buffer index and fetches new data if necessary.
+        """
+
 class EnglishDataStreamer(DataStreamer):
     """
     A specialized implementation of DataStreamer for handling English language data.
@@ -22,6 +91,7 @@ class EnglishDataStreamer(DataStreamer):
         sequence_length (int): Maximum length of sequences after tokenization.
         shuffle (bool): Flag indicating whether to shuffle the data.
         lower_case (bool): Flag indicating whether to convert text to lowercase.
+        remove_punctuation (bool): to remove punctuation or not.
         random_state: Random state generator for reproducibility.
         filenames (list): List of file names containing the data.
         tokenizer: Instance of the EnglishDataTokenizer for text processing.
@@ -43,6 +113,7 @@ class EnglishDataStreamer(DataStreamer):
         self.sequence_length = config.sequence_length
         self.shuffle = config.shuffle
         self.lower_case = config.lower_case
+        self.remove_punctuation = config.remove_punctuation
         self.random_state = np.random.RandomState(config.seed)
         self.filenames = self.get_filenames()
         self.tokenizer = EnglishDataTokenizer(config.tokenizer_path, config.sequence_length)
@@ -61,6 +132,9 @@ class EnglishDataStreamer(DataStreamer):
             sentence = re.sub("<br />", " ", sentence).strip()
             if self.lower_case:
                 sentence = sentence.lower()
+            # remove punctuation
+            if self.remove_punctuation:
+                sentence = re.sub(f"[{re.escape(string.punctuation)}]", r" ", sentence)
             return sentence
 
         def process_data(filename):
@@ -159,3 +233,4 @@ class EnglishDataStreamer(DataStreamer):
     def reset(self):
         self.buffer_idx = 0
         self.fetch_to_buffer()
+
