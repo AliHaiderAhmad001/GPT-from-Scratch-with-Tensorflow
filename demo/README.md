@@ -102,10 +102,8 @@ I will not explain the details of the algorithm's work, but [here](https://leima
 
 ```
 import os
-import argparse
 import concurrent.futures
 from transformers import AutoTokenizer
-from abc import ABCMeta, abstractmethod
 
 class BPETrainer():
     def __init__(self, model="gpt2"):
@@ -159,21 +157,13 @@ class BPETrainer():
     def save(self, fp):
         self.tokenizer.save_pretrained(fp)
 
-def main():
-    parser = argparse.ArgumentParser(description="Train a BPE tokenizer on a new corpus.")
-    parser.add_argument("data_dir", type=str, help="Corpus directory path")
-    parser.add_argument("--batch_size", type=int, default=1000, help="Batch size for reading files (default: 1000)")
-    parser.add_argument("--vocab_size", type=int, default=50357, help="Target vocabulary size (default: 50357)")
-    parser.add_argument("--save", action="store_true", help="Save the adapted tokenizer")
-    parser.add_argument("--save_fp", type=str, default="tokenizer/adapted-tokenizer", help="File path to save the tokenizer (default: 'tokenizer/adapted-tokenizer')")
-
-    args = parser.parse_args()
-
+def main(data_dir, batch_size=1000, vocab_size=50357, save=True, save_fp='tokenizer/adapted-tokenizer'):
     bpe_trainer = BPETrainer()
-    bpe_trainer.train(data_dir=args.data_dir, batch_size=args.batch_size, vocab_size=args.vocab_size, save=args.save, save_fp=args.save_fp)
+    bpe_trainer.train(data_dir=data_dir, batch_size=batch_size, vocab_size=vocab_size, save=save, save_fp=save_fp)
 
 if __name__ == "__main__":
-    main()
+    main("aclImdb")
+
 ```
 
 ## Tokenizer
