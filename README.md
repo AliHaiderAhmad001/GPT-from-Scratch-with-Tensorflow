@@ -65,15 +65,20 @@ Detailed project documentation can be found in the `demo/` directory. It include
    ```bash
    pip install -r requirements.txt
    ```
-4. Download and prepare Dataset: You can go and review the demo. You can go and review the demo. You can work on the same data set, change it or adjust your preferences.
-5. Optionally, you can re-train GPT tokinizer:
+4. Download and prepare Dataset: You can go and review the demo.You can work on the same dataset, change it or adjust your preferences. However, You can download the dataset directly from [here](https://ai.stanford.edu/~amaas/data/sentiment/aclImdb_v1.tar.gz). You can take a part of it for validation through the following code:
+   ```bash
+   python prepare_dataset.py aclImdb/test aclImdb/valid --num_files_to_move 2500
+   ```
+The data loader I use requires the validation set to be in a separate folder.
+   
+6. Optionally, you can re-train GPT tokinizer:
    ```bash
    python bpe_tokenizer.py aclImdb --batch_size 1000 --vocab_size 50357 --save --save_fp tokenizer/adapted-tokenizer
    ```
-6. Train the GPT model (provide more specific instructions if needed):
+7. Train the GPT model (provide more specific instructions if needed):
    * To start training from scratch: `python train.py`
    * To resume training from a checkpoint: `python train.py --resume`
-7. Generate Sentences. You can use the following command to generate text using your script:
+8. Generate Sentences. You can use the following command to generate text using your script:
    ```bash
    python your_script.py "input_text_prompt" --sampler "greedy"  # For greedy sampling
    ```
