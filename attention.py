@@ -1,3 +1,5 @@
+import tensorflow as tf
+
 class AttentionHead(tf.keras.layers.Layer):
     """
     Attention head implementation.
@@ -13,8 +15,7 @@ class AttentionHead(tf.keras.layers.Layer):
     """
 
     def __init__(self, head_dim, name = None, **kwargs):
-        super(AttentionHead, self).__init__(name = name)
-        super(AttentionHead, self).__init__(**kwargs)
+        super(AttentionHead, self).__init__(name=name, **kwargs)
         self.supports_masking = True  # Enable masking support
         self.head_dim = head_dim
         self.query_weights = tf.keras.layers.Dense(head_dim)
