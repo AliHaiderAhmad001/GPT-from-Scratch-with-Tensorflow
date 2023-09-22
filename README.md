@@ -38,7 +38,7 @@ There are several versions of the GPT. This implementation focuses mainly on the
 
 - Python 3.10.6
 - TensorFlow 2.12.0
-- Transformers 4.33.2 
+- Transformers 4.33.2 (Just for tokenizer)
 
 ## Documentation
 
