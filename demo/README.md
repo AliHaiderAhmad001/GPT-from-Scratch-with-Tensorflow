@@ -7,7 +7,7 @@ GPT-1 "Generative Pre-trained Transformer" is the first version of the GPT serie
 ## The environment
 We are creating this demo within Jupiter Notebook, so first of all don't forget to go to the working folder:
 ```
-%cd '/content/drive/MyDrive/Colab Notebooks/projects/GenesisMind-Building-GPT1-from-Scratch'
+%cd '/content/drive/MyDrive/Colab Notebooks/projects/GenesisMind-Building-GPT-from-Scratch'
 ```
 
 ## Download requirements
