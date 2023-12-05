@@ -97,8 +97,5 @@ This project is licensed under the MIT License. See the [LICENSE](https://github
 ## Acknowledgments
 
 - [OpenAI GPT](https://openai.com/research/gpt) for inspiring this project.
-- Any other acknowledgments or credits.
 
 ---
-
-Feel free to add more sections or details to this README as needed for your project. You should include instructions on how to use your GPT model for text generation and any other relevant information for users and contributors.
