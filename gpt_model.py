@@ -39,7 +39,7 @@ class GPT(tf.keras.Model):
         Returns:
             Output logits of the GPT model.
         """
-        x_dec = self.embed_layer(inputs)
+        x_dec = self.embed_layer(inputs, training=training))
 
         for decoder_layer in self.decoder:
             x_dec = decoder_layer(x_dec, training=training)
