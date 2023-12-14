@@ -52,8 +52,8 @@ Detailed project documentation can be found in the `demo/` directory. It include
 1. Clone the repository:
 
    ```bash
-   git clone [https://github.com/your-username/your-gpt-project.git](https://github.com/AliHaiderAhmad001/GenesisMind-Building-GPT1-from-Scratch.git)
-   cd GenesisMind-Building-GPT1-from-Scratch
+   git clone https://github.com/AliHaiderAhmad001/GPT-from-Scratch-with-Tensorflow.git
+   cd GPT-from-Scratch-with-Tensorflow
    ```
 
 2. Create a virtual environment (optional but recommended):
