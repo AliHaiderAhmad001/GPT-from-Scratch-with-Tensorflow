@@ -51,3 +51,4 @@ class Config:
         self.num_blocks = 2
         self.num_epochs = 20
         self.patience = 4
+        self.layer_norm_epsilon = 1e-6
