@@ -13,7 +13,6 @@ class Embeddings(tf.keras.layers.Layer):
     Attributes:
         token_embeddings (tf.keras.layers.Embedding): Token embedding layer.
         dropout (tf.keras.layers.Dropout): Dropout layer for regularization.
-        norm (tf.keras.layers.LayerNormalization): Layer normalization for normalization.
     """
 
     def __init__(self, config, name = None,  **kwargs):
@@ -23,7 +22,6 @@ class Embeddings(tf.keras.layers.Layer):
         )
         self.PositionalInfo = PositionalEmbeddings(config)
         self.dropout = tf.keras.layers.Dropout(config.hidden_dropout_prob)
-        self.norm = tf.keras.layers.LayerNormalization()
 
     def call(self, input_ids, training=False):
         """
@@ -68,6 +66,5 @@ class Embeddings(tf.keras.layers.Layer):
             "token_embeddings": self.token_embeddings,
             "PositionalInfo": self.PositionalInfo,
             "dropout": self.dropout,
-            "norm": self.norm,
         })
         return config
