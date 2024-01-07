@@ -99,6 +99,6 @@ This project is licensed under the MIT License. See the [LICENSE](https://github
 
 ## Acknowledgments
 
-- [OpenAI GPT](https://openai.com/research/gpt) for inspiring this project.
+- [OpenAI GPT](https://openai.com/research/gpt).
 
 ---
