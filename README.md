@@ -4,9 +4,11 @@ GPT "Generative Pre-trained Transformer" is the first version of the GPT series 
 
 ---
 
-![Python](https://img.shields.io/badge/python-3.10.6-blue.svg)
-![TensorFlow](https://img.shields.io/badge/tensorflow-2.12.0-orange.svg)
-![Transformers](https://img.shields.io/badge/transformers-required-green.svg)
+[![License: MIT](https://img.shields.io/badge/License-MIT-black.svg)](https://opensource.org/licenses/MIT)
+[![Platform](https://img.shields.io/badge/Platform-Ubuntu-red.svg)](https://www.ubuntu.com/)
+[![Tensorflow](https://img.shields.io/badge/Tensorflow-2-orange.svg)](https://tensorflow.org/)
+![Transformers](https://img.shields.io/badge/transformers-4.36-yellow.svg)
+[![Python](https://img.shields.io/badge/Python-3.11-blue.svg)](https://www.python.org/)
 
 ## Overview
 
