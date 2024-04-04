@@ -14,9 +14,9 @@ GPT "Generative Pre-trained Transformer" is the first version of the GPT series 
 
 This project is an implementation of the GPT (Generative Pre-trained Transformer) model from scratch using TensorFlow. It includes all the components of the model, such as the positional embeddings, attention mechanism, feed-forward layers, and more. 
 
-**Important Note:** The goal of this project is to provide a deep understanding of the GPT architecture and its inner workings. So, it's only for educational purposes.
+**Important Note:** The goal of this project is to provide a deep understanding of the GPT architecture and its inner workings. So, it's mainly for educational purposes. You can fully understand the structure and working mechanism of this model here, and use the components I have implemented in your projects. Generally, if you want to use the project to train your language model with big data, you may need to modify the dataset file to be able to process big data more efficiently. I designed the dataset file mainly to handle simple, not large, data, because I am not in this regard now.
 
-There are several versions of the GPT. This implementation focuses mainly on the implementation of ["Improving Language Understanding by Generative Pre-Training"](https://www.semanticscholar.org/paper/Improving-Language-Understanding-by-Generative-Radford-Narasimhan/cd18800a0fe0b668a1cc19f2ec95b5003d0a5035). Generally all versions are somewhat similar, the main difference in the capacity of the model and the size of the dataset.
+There are several versions of the GPT. This implementation focuses mainly on the implementation of ["Improving Language Understanding by Generative Pre-Training"](https://www.semanticscholar.org/paper/Improving-Language-Understanding-by-Generative-Radford-Narasimhan/cd18800a0fe0b668a1cc19f2ec95b5003d0a5035).
 
 
 ## Project Structure
